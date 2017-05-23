@@ -1,0 +1,192 @@
+#!/bin/bash
+
+# compares network performance between two specified versions of QEMU
+
+lvl='n'
+dur=60
+reps=3
+infile='n'
+
+while getopts 'bcefhi' flag; do
+  case "${flag}" in
+    b) echo "Basic test selected"
+       lvl='s'
+       vir='y'
+       bm='y' ;;
+    c) echo "Custom test selected"
+       lvl='s'
+       echo ""
+       echo "Specify which backends and paths to test (y/n)"
+       echo "Backends"
+       while [[ $vir != y && $vir != n ]]; do
+       	read -p "Virtio?: " vir
+       done
+       while [[ $vho != y && $vho != n ]]; do
+       	read -p "Vhost?: " vho
+       done
+       echo "Paths"
+       while [[ $bm != y && $bm != n ]]; do
+       	read -p "bm to vm: " bm
+       done
+       while [[ $vm != y && $vm != n ]]; do
+       	read -p "vm to vm: " vm
+       done ;;
+    e) echo "Extensive test selected"
+       lvl='s'
+       vir='y'
+       bm='y'
+       vm='y' ;;
+    f) echo "Full test selected"
+       lvl='s'
+       vir='y'
+       vho='y'
+       bm='y'
+       vm='y' ;;
+    h) echo ""
+       echo "Usage: ./qemu_net_test [options]"
+       echo "Options:"
+       echo "	-b	Basic test: tests virtio backend only"
+       echo "		Host to guest only"
+       echo "	-c	Custom test: user specifies which backends and paths to test"
+       echo "	-e	Extensive test: tests virtio backends"
+       echo " 		Host to guest and guest to guest"
+       echo "	-f 	Full test: tests all backends and paths (virtio/vhost)"
+       echo "		Host to guest and guest to guest"
+       echo "	-h	Display this text"
+       echo "	-i      Use input file specifications"
+       echo ""
+       echo "	The default Hlinux image requires the subnet 150.150.150.0/24 to be open"
+       echo ""
+       echo "	Custom image requirements are specified below:"
+       echo "	- vm1 and vm2 must initialize with secondary ip addresses matching those specified for testing"
+       echo "	  This can be done by editing their respective /etc/rc.local files (for example with: ifconfig eth0:0 ipaddress)"
+       echo "	- vm1 requires netperf to be installed on the system, with netserver initialized on startup"
+       echo "	  Netserver is initialized by adding the line 'netserver -4' to /etc/rc.local"
+       echo "	- vm2 requires the scripts: udp_rr.sh tcp_rr.sh udp_stream.sh tcp_stream.sh netperf_test_suite1.sh format_data.py"
+       echo "	  The scripts above should be located in vm2's home directory"
+       echo ""
+       exit ;;
+    i) infile='y' ;;
+    *) echo "Unexpected option ${flag}" ;;
+  esac
+done
+
+echo ""
+
+if [ $infile != y ]; then
+ read -p "Input file? (y/n): " infile
+ echo ""
+fi
+
+if [ $infile != y ]; then
+
+ if [ $lvl == n ]; then
+  echo "No test level specified: basic test config will be used"
+  vir='y'
+  vho='n'
+  bm='y'
+  vm='n'
+  echo ""
+ fi
+
+ echo "The default guest OS is Hlinux, initialization requires the subnet 150.150.150.0/24 to be open"
+ read -p "Use default images? (y/n): " custim
+ if [ $custim == n ]; then
+  echo "image requirements can be viewed with the -h flag"
+  read -p "Input custom image for vm1: " vm1iso
+  read -p "Input file name of the image for vm2: " vm2iso
+ else
+  vm1iso='root1.qcow'
+  vm2iso='root2.qcow'
+ fi
+ echo""
+
+ read -p "Input bridge name (default br0): " brid
+ read -p "Input the ip address for the bridge ($brid): " brip
+ read -p "Input physical interface for bridge use (ie eth0): " phid
+ echo ""
+
+ if [ $vm == n ]; then
+  echo "Enter the IP addresses to be used by the guest machine"
+  echo "Address should be on the same subnet as the bridge (ie: $brip)"
+  read -p "vm1: " vm1ip
+  echo "Enter the MAC address to be used by the guest machine (ie: 12:34:00:00:ff:f1)"
+  read -p "vm1: " vm1mac
+  echo "Enter the hostname to be used by the guest machine"
+  read -p "vm1: " vm1hn
+  echo "Enter root password to be used by guest machine"
+  read -p "vm1: " vm1pw
+ fi
+
+ if [ $vm == y ]; then
+  echo "Enter the IP addresses to be used by guest machines"
+  echo "Addresses should be on the same subnet as the bridge (ie: $brip)"
+  read -p "vm1: " vm1ip
+  read -p "vm2: " vm2ip
+  echo "Enter the MAC addresses to be used by the guest machines (ie: 12:34:00:00:ff:f1)"
+  read -p "vm1: " vm1mac
+  read -p "vm2: " vm2mac
+  echo "Enter the hostnames to be used by guest machines"
+  read -p "vm1: " vm1hn
+  read -p "vm2: " vm2hn
+  echo "Enter root password to be used by guest machines"
+  read -p "vm1: " vm1pw
+  read -p "vm2: " vm2pw
+ fi
+
+ echo ""
+ read -p "Would you like to use default packet size values for testing? (y/n): " dpac
+ if [ $dpac == y ]; then
+  urrp="1 4096"
+  urbp="64 1024"
+  ustp="1 128 1024 4096"
+  trrp="1 128 4096 65536"
+  tstp="128 4096 65536"
+ else
+  echo "Input packet sizes for selected tests, with each number seperated by a space"
+  read -p "udp_rr: " urrp
+  read -p "udp_rr_burst: " urbp
+  read -p "udp_stream: " ustp
+  read -p "tcp_rr: " trrp
+  read -p "tcp_stream: " tstp
+ fi
+
+ echo ""
+ echo "QEMU versions can be found on the QEMU wiki: http://www.qemu-project.org/download/#source"
+ echo "Enter only the version identifier (eg: 2.8.0-rc4)"
+ echo ""
+ read -p "Input the new version of QEMU to be tested (eg: 2.8.0): " qemu_new
+ read -p "Input the version of QEMU to be used for comparison (eg: 2.7.0): " qemu_old
+ echo ""
+fi
+
+if [ $infile == y ]; then
+ source ./input_file
+fi
+
+while [[ $labssh != y && $labssh != n ]]; do
+ read -p "Do you wish to run this test on this machine? (y/n): " labssh
+done
+echo ""
+
+if [ $labssh == n ]
+then
+ read -p "Input the address of the test host (eg: root@15.244.210.32): " haddr
+ echo ""
+fi
+
+echo "Test time generally ranges from 1-3 hours depending on download speeds and custom parameters"
+read -p "Press [Enter] to begin testing: " -s
+
+if [ $labssh == y ]
+then
+ export qemu_new qemu_old vir vho bm vm vm1ip vm1mac vm1pw vm1iso vm2ip vm2mac vm2pw vm2iso brid brip phid urrp urbp ustp trrp tstp custim dur reps
+ chmod +x ssh_script.sh
+ ./ssh_script.sh #>/dev/null 2>/dev/null uncomment to silence test
+fi
+
+# if sshing into host, do this
+if [ $labssh == n ]
+then
+ ssh $haddr "qemu_new=$qemu_new && qemu_old=$qemu_old && vir=$vir && vho=$vho && bm=$bm $$ vm=$vm && export qemu_new qemu_old vir vho mac vm bm && wget --no-check-certificate https://raw.github.hpe.com/david-patawaran/qemu-regression/master/ssh_script.sh && chmod +x ssh_script.sh && ./ssh_script.sh" >/dev/null 2>/dev/null
+fi

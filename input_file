@@ -1,0 +1,35 @@
+# test specification input file
+
+qemu_old=''
+qemu_new=''
+
+vir=''
+vho=''
+bm=''
+vm=''
+
+phid=''
+brid=''
+brip=''
+vm1ip=''
+vm2ip=''
+
+custim=''
+
+dur=''
+reps=''
+
+urrp=''
+urbp=''
+ustp=''
+trrp=''
+tstp=''
+
+vm1pw=''
+vm1iso=''
+vm1mac=''
+vm2pw=''
+vm2iso=''
+vm2mac=''
+
+export qemu_new qemu_old vir vho bm vm vm1ip vm1mac vm1pw vm1iso vm2ip vm2mac vm2pw vm2iso brid brip phid urrp urbp ustp trrp tstp custim dur reps
