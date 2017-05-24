@@ -1,7 +1,9 @@
 #!/bin/bash
 
-# install gdebi to aide in the installation of different QEMU versions
+# installs necessary packages, might mention in docs rather than keep in scripts
 apt-get --yes --force-yes install build-essential
+apt-get --yes --force-yes install pkg-config
+apt-get --yes --force-yes install git libglib2.0-dev libfdt-dev libpixman-1-dev zlib1g-dev
 apt-get --yes --force-yes install gdebi
 apt-get --yes --force-yes install gnuplot
 apt-get --yes --force-yes install openssh-client
