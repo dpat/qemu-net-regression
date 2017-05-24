@@ -1,12 +1,11 @@
 #!/bin/bash
 
 # install gdebi to aide in the installation of different QEMU versions
-apt-get install gdebi
-apt-get install gcc
-apt-get install gnuplot
-apt-get install openssh-client
-apt-get install openssh-server
-apt-get install sshpass
+apt-get --yes --force-yes install gdebi
+apt-get --yes --force-yes install gnuplot
+apt-get --yes --force-yes install openssh-client
+apt-get --yes --force-yes install openssh-server
+apt-get --yes --force-yes install sshpass
 
 # downloads and prepares specified QEMU versions for install
 if [ ! -d qemu-${qemu_old} ]; then
