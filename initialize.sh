@@ -91,7 +91,7 @@ if [ $custim == y ]; then
   sshpass -p "password" ssh -o "StrictHostKeyChecking no" root@150.150.150.1 "echo 'root:$vm2pw' | chpasswd"
   sleep 5
   sshpass -p "password" scp -o "StrictHostKeyChecking no" udp_rr.sh tcp_rr.sh udp_stream.sh tcp_stream.sh netperf_test_suite1.sh format_data.py root@150.150.150.1:.
-  sleep 15
+  sleep 30
   kill $(pidof qemu-system-x86_64)
  fi
 
